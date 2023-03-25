@@ -1,7 +1,10 @@
-When users deposit funds in Tornado Cash, they generate two random numbers - secret and nullifier. These numbers are hashed and sent along with the deposit. Then the smart contract will take this hash and add it to the merkle tree that is stored and built on-chain.
+1) When users deposit funds in Tornado Cash, the contract creates a note that includes a commitment and a nullifier hash. 
+2) First it generates two random numbers - secret and nullifier. These are hashed together to form a commitment. 
+3) The nullifier hash and the commitment is sent along with the deposit. 
+4) Then the smart contract takes the commitment hash and adds it to the merkle tree that is stored and built on-chain. 
+5) The nullifier hash is then broadcast to the Tornado Cash network, where it is added to a list of spent nullifiers. This prevents anyone else from withdrawing funds using the same note.
 
 The merkle root contains the users node. The contract doesn't need to have the latest version of the tree as the user will be present as a node once inserted.
-
 
 
 ```circom=
@@ -28,13 +31,18 @@ template CommitmentHasher() {
     nullifierHash <== nullifierHasher.out[0];
 }
 ```
+When a user wants to withdraw funds from the contract, they must first prove ownership of a note. To do this, they reveal the commitment and the nullifier hash.
 
+The snark prover submitted by the user contains root, a public input root and private inputs: secret, nullifier,  pathElements and pathIndices.
 
-In order to withdraw the user must prove authenticity. The snark prover submitted by the user contains root, a public input root and private inputs: secret, nullifier,  pathElements and pathIndices.
+The Proof computes two hashes. A commitment hash of the secret and the nullifier. Second a hash of just the nullifier, called nullifier hash. For an external observer, these two hashes seem uncorrelated
 
-The Zero Knowledge proof computes two hashes. A commitment hash of the secret and the nullifier. Second a hash of just the nullifier, called nullifier hash. For an external observer, these two hashes seem uncorrelated
+The contract checks that the root is one of the last 100? merkle roots and whether the nullifier hash is unique.
 
-The contract checks that the root is one of the last 100? merkle roots and whether the nullifier hash is unique. The nullifier hash prevent double spending like a nonce used in blockchain transactions?
+It verifies the nullifier hash against a list of previously spent nullifiers. If the nullifier hash is found in the list, the transaction is rejected as a double spend attempt.
+
+If the nullifier hash is not found in the list, the transaction is added to the blockchain the contract releases the funds to the withdrawer. This mechanism of using nullifier to prevent double spend was first adopted by Zcash.
+
 
 ```circom=
 // Verifies that commitment that corresponds to given secret and nullifier is included in the merkle tree of deposits
