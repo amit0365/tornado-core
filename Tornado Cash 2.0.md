@@ -1,3 +1,6 @@
+# Tornado Cash Core 
+###### tags: `Tornado Cash`
+
 1) When users deposit funds in Tornado Cash, the contract creates a note that includes a commitment and a nullifier hash. 
 2) First it generates two random numbers - secret and nullifier. These are hashed together to form a commitment. 
 3) The nullifier hash and the commitment is sent along with the deposit. 
